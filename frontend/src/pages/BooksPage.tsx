@@ -36,6 +36,7 @@ export const BooksPage: React.FC = () => {
     try {
       console.log("Fetching books...")
       const fetchedBooks = await getBooks()
+      console.log("Fetched books:", fetchedBooks)
       setBooks(fetchedBooks)
     } catch (error) {
       console.error("Failed to load books:", error)
@@ -56,14 +57,17 @@ export const BooksPage: React.FC = () => {
     setIsAddModalOpen(false)
   }
 
-  const filteredBooks = books.filter((book) => {
-    const matchesSearch =
-      book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      book.author.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredBooks = Array.isArray(books)
+  ? books.filter((book) => {
+      const matchesSearch =
+        book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        book.author.toLowerCase().includes(searchQuery.toLowerCase());
 
-    if (!activeFilter) return matchesSearch
-    return matchesSearch && book.status === activeFilter
-  })
+      if (!activeFilter) return matchesSearch;
+      return matchesSearch && book.status === activeFilter;
+    })
+  : [];
+
 
   const bookCountByStatus = {
     all: books.length,

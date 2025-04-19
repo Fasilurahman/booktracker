@@ -5,15 +5,31 @@ import { books } from "../models/book";
 import { notes } from "../models/note";
 import { eq } from "drizzle-orm";
 
+type BookRequestBody = typeof bookSchema._output;
+type Book = {
+  id: string;
+  title: string;
+  author: string;
+  status: "not_started" | "in_progress" | "finished";
+  createdAt: Date;
+};
+
+type SuccessResponse<T> = { success: true; data: T };
+type ErrorResponse = { success: false; error: string };
+
 export const bookRoutes = new Elysia({ prefix: "/books" })
   .get("/", async ({ set }) => {
     try {
       const allBooks = await db.select().from(books);
-      return allBooks;
+      console.log("Fetched books:", allBooks);
+      return { success: true, data: allBooks } as SuccessResponse<Book[]>;
     } catch (error) {
       console.error("Error fetching books:", error);
       set.status = 500;
-      return { error: "Failed to fetch books" };
+      return {
+        success: false,
+        error: "Failed to fetch books",
+      } as ErrorResponse;
     }
   })
   .post("/", async ({ body, set }) => {
@@ -23,42 +39,53 @@ export const bookRoutes = new Elysia({ prefix: "/books" })
       return { error: parse.error.errors };
     }
 
-    console.log("parse", parse.data);
+    const newBookData: BookRequestBody = parse.data;
 
     try {
       const newBook = await db
         .insert(books)
         .values({
-          title: parse.data.title,
-          author: parse.data.author,
-          status: parse.data.status,
+          title: newBookData.title,
+          author: newBookData.author,
+          status: newBookData.status,
         })
         .returning();
 
-      return newBook[0];
+      if (newBook.length > 0) {
+        const book: Book = newBook[0] as Book;
+
+        return { success: true, data: book } as SuccessResponse<Book>;
+      }
     } catch (error) {
       console.error("Database insert error:", error);
       set.status = 500;
-      return { error: "Failed to insert the book into the database" };
+      return {
+        success: false,
+        error: "Failed to insert the book into the database",
+      } as ErrorResponse;
     }
   })
-  .get('/:id', async ({ params, set }) => {
+  .get("/:id", async ({ params, set }) => {
+    const bookId: string = params.id;
     try {
-      const book = await db.select().from(books).where(eq(books.id, params.id));
+      const book: Book[] = await db
+        .select()
+        .from(books)
+        .where(eq(books.id, bookId));
 
       if (!book.length) {
         set.status = 404;
-        return { error: 'Book not found' };
+        return { success: false, error: "Book not found" } as ErrorResponse;
       }
 
-      return book[0];
+      return { success: true, data: book[0] } as SuccessResponse<Book>;
     } catch (error) {
-      console.error('Error fetching book by ID:', error);
+      console.error("Error fetching book by ID:", error);
       set.status = 500;
-      return { error: 'Failed to fetch book' };
+      return { success: false, error: "Failed to fetch book" } as ErrorResponse;
     }
   })
-  .put('/:id', async ({ params, body, set }) => {
+  .put("/:id", async ({ params, body, set }) => {
     try {
       const parse = bookSchema.safeParse(body);
 
@@ -67,25 +94,30 @@ export const bookRoutes = new Elysia({ prefix: "/books" })
         return { error: parse.error.errors };
       }
 
-      const updatedBook = await db.update(books)
+      const updatedBook = await db
+        .update(books)
         .set({
           title: parse.data.title,
           author: parse.data.author,
-          status: parse.data.status
+          status: parse.data.status,
         })
         .where(eq(books.id, params.id))
         .returning();
 
       if (!updatedBook.length) {
         set.status = 404;
-        return { error: 'Book not found' };
+        return { success: false, error: "Book not found" } as ErrorResponse;
       }
 
-      return updatedBook[0];
+      const book: Book = updatedBook[0] as Book;
+      return { success: true, data: book } as SuccessResponse<Book>;
     } catch (error) {
-      console.error('Error updating book:', error);
+      console.error("Error updating book:", error);
       set.status = 500;
-      return { error: 'Failed to update book' };
+      return {
+        success: false,
+        error: "Failed to update book",
+      } as ErrorResponse;
     }
   })
   .delete("/:id", async ({ params, set }) => {
@@ -99,13 +131,22 @@ export const bookRoutes = new Elysia({ prefix: "/books" })
 
       if (!deleted.length) {
         set.status = 404;
-        return { error: "Book not found for deletion" };
+        return {
+          success: false,
+          error: "Book not found for deletion",
+        } as ErrorResponse;
       }
 
-      return { message: "Book and all its notes deleted successfully" };
+      return {
+        success: true,
+        data: { message: "Book and all its notes deleted successfully" },
+      } as SuccessResponse<{ message: string }>;
     } catch (error) {
       console.error("Error during book deletion:", error);
       set.status = 500;
-      return { error: "Failed to delete book and notes." };
+      return {
+        success: false,
+        error: "Failed to delete book and notes.",
+      } as ErrorResponse;
     }
   });

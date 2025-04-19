@@ -4,26 +4,36 @@ import { notes } from "../models/note";
 import { noteSchema } from "../schemas/noteSchema";
 import { eq } from "drizzle-orm";
 
+type NoteRequestBody = typeof noteSchema._output;
+type Note = { id: string; bookId: string; content: string };
+
+type SuccessResponse<T> = { success: true; data: T };
+type ErrorResponse = { success: false; error: string };
+
 export const noteRoutes = new Elysia()
   .get("/books/:id/notes", async ({ params, set }) => {
     try {
-      console.log("params", params);
       const allNotes = await db
         .select()
         .from(notes)
         .where(eq(notes.bookId, params.id));
-      console.log("allNotes", allNotes);
 
       if (allNotes.length === 0) {
         set.status = 404;
-        return { error: "No notes found for this book" };
+        return {
+          success: false,
+          error: "No notes found for this book",
+        } as ErrorResponse;
       }
 
-      return allNotes;
+      return { success: true, data: allNotes } as SuccessResponse<Note[]>;
     } catch (error) {
       console.error("Error fetching notes:", error);
       set.status = 500;
-      return { error: "Failed to fetch notes" };
+      return {
+        success: false,
+        error: "Failed to fetch notes",
+      } as ErrorResponse;
     }
   })
   .post("/books/:bookId/notes", async ({ params, body, set }) => {
@@ -43,10 +53,14 @@ export const noteRoutes = new Elysia()
         })
         .returning();
 
-      return newNote[0];
+      const note: Note = newNote[0] as Note;
+      return { success: true, data: note } as SuccessResponse<Note>;
     } catch (error) {
       console.error("Error creating note:", error);
       set.status = 500;
-      return { error: "Failed to create note" };
+      return {
+        success: false,
+        error: "Failed to create note",
+      } as ErrorResponse;
     }
   });

@@ -309,7 +309,7 @@ export const BookDetailsPage: React.FC = () => {
         )}
 
         {/* Details Tab Content */}
-        {activeTab === "details" && (
+        {activeTab === "details" && ( 
           <div className="bg-white rounded-2xl shadow-lg p-8 mb-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Book Details</h2>
 

@@ -7,12 +7,12 @@ let notes: Note[] = [];
 // Book API
 export const getBooks = async (): Promise<Book[]> => {
   const response = await axios.get("http://localhost:3000/api/books");
-  return response.data;
+  return response.data.data;
 };
 
 export const getBook = async (id: string): Promise<Book | undefined> => {
   const response = await axios.get(`http://localhost:3000/api/books/${id}`);
-  return response.data;
+  return response.data.data;
 };
 
 export const addBook = async (book: BookPayload): Promise<Book> => {
@@ -38,7 +38,7 @@ export const getNotes = async (bookId: string): Promise<Note[]> => {
     `http://localhost:3000/api/books/${bookId}/notes`
   );
   console.log("Fetched notes:", response.data);
-  return response.data;
+  return response.data.data;
 };
 
 export const addNote = async (

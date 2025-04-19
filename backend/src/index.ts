@@ -8,8 +8,19 @@ import { swagger } from "@elysiajs/swagger";
 const app = new Elysia();
 connectDB();
 
-app.use(cors());
-app.use(swagger());
+app.use(cors({
+    origin: ["http://localhost:5173"],
+}));
+app.use(swagger({
+    documentation: {
+        info: {
+            title: "Books & Notes API",
+            version: "1.0.0",
+            description: "API documentation for managing books and their notes."
+        }
+    }
+}));
+
 
 app.group("/api", (app) => 
     app
