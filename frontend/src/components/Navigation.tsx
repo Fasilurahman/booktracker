@@ -11,7 +11,9 @@ export const Navigation: React.FC = () => {
             <BookOpen size={24} />
             <span className="text-xl font-semibold">BookTracker</span>
           </Link>
-          <div className="flex gap-6">
+
+          {/* Adjusted: little margin to push links slightly left */}
+          <div className="flex gap-6 mr-8">
             <Link
               to="/"
               className="text-gray-600 hover:text-gray-900 transition-colors"
